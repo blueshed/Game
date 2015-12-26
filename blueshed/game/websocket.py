@@ -55,8 +55,6 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
             if result:
                 logging.debug(result)
                 self.write_message(result)
-            if context:
-                context.flush()
         except Exception as ex:
             logging.exception(ex)
             error = str(ex)

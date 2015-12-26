@@ -16,13 +16,20 @@ class Control(object):
 
     def _save_state(self):
         with open("games.json", "w") as file:
-            json.dump(self._state, file)
+            json.dump(self._state, file, indent=4)
 
     def echo(context, message):
         return "You said: {}". format(message)
 
+    def get_games(self, context):
+        return list(self._state.keys())
+
     def create_game(self, context, name):
-        self._state[name] = {}
+        self._state[name] = {
+            'name': name,
+            'users': [],
+            'transcript': []
+        }
         broadcast = json.dumps({
             'signal': "created_game",
             'message': name
@@ -67,7 +74,8 @@ class Control(object):
         return True
 
     def _broadcast_to_game_(self, game, broadcast):
-        game.setdefault("transcript", []).append(broadcast)
+        if game:
+            game.setdefault("transcript", []).append(broadcast)
         self._save_state()
         for client in self._clients:
             if game is None or client._game == game:

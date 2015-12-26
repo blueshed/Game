@@ -47,7 +47,7 @@ export default function(vm, ws_url){
 			else requests[data.response_id].success(data.result);
 			delete requests[data.response_id]
 		} else {
-			vm.$broadcast(data.signal, data.message);
+			vm.$emit(data.signal, data.message);
 		}
 	};
 

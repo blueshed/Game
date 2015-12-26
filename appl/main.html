@@ -3,4 +3,13 @@
 		{{ error }}
 	</div>
 	Welcome {{ message }}
+	<form @submit.stop.prevent="create_game">
+		<input type="text" v-model="new_game_name" />
+		<input type="submit" name="submit" value="Add"/>
+	</form>
+	<ul>
+		<li v-for="game in games">
+			{{ game }}
+		</li>
+	</ul>
 </div>

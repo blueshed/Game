@@ -17,7 +17,8 @@ var appl = window.appl =  new Vue({
 			message: '',
 			games: [],
 			game: null,
-			username: null
+			username: null,
+			new_game_name: null
 		};
     },
 	methods:{
@@ -27,13 +28,17 @@ var appl = window.appl =  new Vue({
 			}
 		},
 		create_game(){
-
+			if(this.new_game_name){
+				this.$ws.rpc("create_game",{name:this.new_game_name}).then((result)=>{
+					this.new_game_name = null;
+				});
+			}
 		},
 		enter_game(){
 
 		},
 		leave_game(){
-			
+
 		}
 	},
 	events:{
@@ -60,6 +65,9 @@ var appl = window.appl =  new Vue({
         this.loading = false;
 		this.$ws.rpc("echo",{message:"foobar"}).then((result)=>{
 			this.message = result;
+		});
+		this.$ws.rpc("get_games",{}).then((result)=>{
+			this.games = result;
 		});
     }
 });
