@@ -18,6 +18,7 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
         return parsed_origin.netloc in ["localhost:8080"]
 
     def open(self):
+        self._game = None
         self.set_nodelay(True)
         self.control._clients.append(self)
 

@@ -14,7 +14,10 @@ var appl = window.appl =  new Vue({
 			loading: true,
 			connected: false,
 			error: null,
-			message: ''
+			message: '',
+			games: [],
+			game: null,
+			username: null
 		};
     },
 	methods:{
@@ -22,6 +25,32 @@ var appl = window.appl =  new Vue({
 			if(this.connected === false){
 				this.$ws = new WS(this, ws_url);
 			}
+		},
+		create_game(){
+
+		},
+		enter_game(){
+
+		},
+		leave_game(){
+			
+		}
+	},
+	events:{
+		created_game(message){
+			this.games.push(message);
+		},
+		entered_game(){
+			this.game.users.push(message);
+		},
+		left_game(message){
+			var index = this.game.users.indexOf(message);
+			if(index != -1){
+				this.game.users.splice(index,1);
+			}
+		},
+		said(message){
+			this.game.transcript.append(message);
 		}
 	},
     created(){
