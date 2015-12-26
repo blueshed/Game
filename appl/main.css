@@ -1,0 +1,12 @@
+.Main{
+
+}
+
+.error{
+    color: red;
+    font-size: 1.1em;
+    padding: 1em;
+    border: 1px solid red;
+    border-radius: 0.4em;
+    margin: 1em;
+}
