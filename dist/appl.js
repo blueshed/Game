@@ -674,7 +674,7 @@ $__System.register("2", [], function() { return { setters: [], execute: function
 (function() {
 var _removeDefine = $__System.get("@@amd-helpers").createDefine();
 define("3", [], function() {
-  return "<div class=\"Main\">\n\t<div class=\"error\" v-if=\"error\">\n\t\t{{ error }}\n\t</div>\n\tWelcome {{ message }}\n</div>\n";
+  return "<div class=\"Main\">\n\t<div class=\"error\" v-if=\"error\">\n\t\t{{ error }}\n\t</div>\n\tWelcome {{ message }} <span class=\"on-line\" v-if=\"connected\">on-line</span><span class=\"off-line\" v-else>off-line</span>\n\t<div v-if=\"!game\">\n\t<form @submit.stop.prevent=\"create_game\">\n\t\t<input type=\"text\" v-model=\"username\"  placeholder=\"username\"/>\n\t\t<input type=\"text\" v-model=\"new_game_name\" placeholder=\"new game name\" />\n\t\t<input type=\"submit\" name=\"submit\" value=\"Add\"/>\n\t</form>\n\t<ul >\n\t\t<li v-for=\"game in games\">\n\t\t\t<a href=\"#\" @click.prevent=\"enter_game(game)\">{{ game }}</a>\n\t\t</li>\n\t</ul>\n\t</div>\n\t<div v-if=\"game\">\n\t\t<h1>{{ game.name }} - {{ username || 'host' }}</h1>\n\t\t<div>\n\t\t\t<h2>transcript</h2>\n\t\t\t<form @submit.stop.prevent=\"say\">\n\t\t\t\t<input type=\"text\" v-model=\"say_what\" placeholder=\"say something\">\n\t\t\t\t<input type=\"submit\" name=\"submit\" value=\"Say\"/>\n\t\t\t\t<button @click.prevent=\"leave_game\">leave game</button>\n\t\t\t</form>\n\t\t\t<div v-for=\"item in game.transcript\" track-by=\"$index\">\n\t\t\t\t{{ item.method }}\n\t\t\t\t<span v-if=\"item.signal=='said'\">\n\t\t\t\t\t{{ item.message.username || 'host' }} says: {{ item.message.said }}\n\t\t\t\t</span>\n\t\t\t\t<span v-else>{{item.signal}} {{ item.message }}</span>\n\t\t\t</div>\n\t\t</div>\n\t\t<div v-if=\"!username\" style=\"padding:5em;\">\n\t\t\t<div v-for=\"user in game.users\" :style=\"{transform: rotation($index)}\">\n\t\t\t\t<div style=\"display:inline-block;transform: rotate(90deg);\">\n\t\t\t\t\t{{ user }} {{ rotation($index) }}\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t</div>\n\t</div>\n</div>\n";
 });
 
 _removeDefine();
@@ -5563,7 +5563,7 @@ $__System.register("a", ["9"], function (_export) {
 						if (data.error) requests[data.response_id].error(new Error(data.error));else requests[data.response_id].success(data.result);
 						delete requests[data.response_id];
 					} else {
-						vm.$broadcast(data.signal, data.message);
+						vm.$emit(data.signal, data.message);
 					}
 				};
 
@@ -11260,7 +11260,7 @@ $__System.register('d', [], function (_export) {
 
       _export('debug', debug);
 
-      ws_url = 'ws://localhost:8080/websocket';
+      ws_url = 'ws://petermac.local:8080/websocket';
 
       _export('ws_url', ws_url);
     }
@@ -11293,7 +11293,12 @@ $__System.register('1', ['2', '3', 'a', 'c', 'd'], function (_export) {
 						loading: true,
 						connected: false,
 						error: null,
-						message: ''
+						message: '',
+						games: [],
+						game: null,
+						username: null,
+						new_game_name: null,
+						say_what: null
 					};
 				},
 				methods: {
@@ -11301,17 +11306,106 @@ $__System.register('1', ['2', '3', 'a', 'c', 'd'], function (_export) {
 						if (this.connected === false) {
 							this.$ws = new WS(this, ws_url);
 						}
+					},
+					create_game: function create_game() {
+						var _this = this;
+
+						if (this.new_game_name) {
+							this.$ws.rpc("create_game", { name: this.new_game_name }).then(function (result) {
+								_this.new_game_name = null;
+							});
+						}
+					},
+					enter_game: function enter_game(name) {
+						var _this2 = this;
+
+						return this.$ws.rpc("enter_game", { name: name, username: this.username }).then(function (result) {
+							_this2.game = result;
+						});
+					},
+					leave_game: function leave_game() {
+						var _this3 = this;
+
+						this.$ws.rpc("leave_game", {}).then(function (result) {
+							_this3.game = null;
+						});
+					},
+					say: function say() {
+						var _this4 = this;
+
+						this.$ws.rpc("say", { message: this.say_what }).then(function (result) {
+							_this4.say_what = null;
+						});
+					},
+					load_state: function load_state() {
+						if (window.localStorage) {
+							var state = localStorage.getItem("state");
+							if (state) {
+								state = JSON.parse(state);
+							}
+							this.username = state ? state.username : null;
+							if (state && state.game_name) {
+								return this.enter_game(state.game_name);
+							}
+						} else {
+							this.error = "No local storeage!";
+						}
+					},
+					save_state: function save_state() {
+						if (window.localStorage) {
+							localStorage.setItem("state", JSON.stringify({
+								username: this.username,
+								game_name: this.game ? this.game.name : null
+							}));
+						} else {
+							this.error = "No local storeage!";
+						}
+					},
+					rotation: function rotation(index) {
+						var deg = 360 / this.game.users.length * index;
+						return "rotate(" + deg + "deg)";
+					}
+				},
+				events: {
+					created_game: function created_game(message) {
+						this.games.push(message);
+					},
+					entered_game: function entered_game(message) {
+						this.game.users.push(message);
+						this.game.transcript.push({ signal: 'entered_game', message: message });
+					},
+					left_game: function left_game(message) {
+						var index = this.game.users.indexOf(message);
+						if (index != -1) {
+							this.game.users.splice(index, 1);
+						}
+						this.game.transcript.push({ signal: 'left_game', message: message });
+					},
+					said: function said(message) {
+						this.game.transcript.push({ signal: 'said', message: message });
 					}
 				},
 				created: function created() {
 					this.connect();
 				},
+				watch: {
+					username: function username() {
+						this.save_state();
+					},
+					game: function game() {
+						this.save_state();
+					}
+				},
 				ready: function ready() {
-					var _this = this;
+					var _this5 = this;
 
 					this.loading = false;
 					this.$ws.rpc("echo", { message: "foobar" }).then(function (result) {
-						_this.message = result;
+						_this5.message = result;
+					});
+					this.$ws.rpc("get_games", {}).then(function (result) {
+						_this5.games = result;
+						_this5.load_state();
 					});
 				}
 			});
@@ -11320,7 +11414,7 @@ $__System.register('1', ['2', '3', 'a', 'c', 'd'], function (_export) {
 });
 $__System.register('appl/main.css!github:systemjs/plugin-css@0.1.20', [], false, function() {});
 (function(c){if (typeof document == 'undefined') return; var d=document,a='appendChild',i='styleSheet',s=d.createElement('style');s.type='text/css';d.getElementsByTagName('head')[0][a](s);s[i]?s[i].cssText=c:s[a](d.createTextNode(c));})
-(".error{color:red;font-size:1.1em;padding:1em;border:1px solid red;border-radius:.4em;margin:1em}");
+(".error{color:red;font-size:1.1em;padding:1em;border:1px solid red;border-radius:.4em;margin:1em}.off-line{color:purple;float:right}.on-line{color:green;float:right}");
 })
 (function(factory) {
   factory();

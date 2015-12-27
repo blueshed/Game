@@ -10,3 +10,16 @@
     border-radius: 0.4em;
     margin: 1em;
 }
+.off-line{
+    color: purple;
+    float: right;
+}
+.on-line{
+    color: green;
+    float: right;
+}
+.felt{
+    width: 49%;
+    box-sizing: border-box;
+    float: left;
+}

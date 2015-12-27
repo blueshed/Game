@@ -15,7 +15,7 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
     def check_origin(self, origin):
         parsed_origin = urllib.parse.urlparse(origin)
         logging.info("websocket %s", parsed_origin)
-        return parsed_origin.netloc in ["localhost:8080"]
+        return parsed_origin.netloc in ["localhost:8080", "petermac.local:8080"]
 
     def open(self):
         self._game = None

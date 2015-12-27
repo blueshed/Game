@@ -2,7 +2,7 @@
 	<div class="error" v-if="error">
 		{{ error }}
 	</div>
-	Welcome {{ message }}
+	Welcome {{ message }} <span class="on-line" v-if="connected">on-line</span><span class="off-line" v-else>off-line</span>
 	<div v-if="!game">
 	<form @submit.stop.prevent="create_game">
 		<input type="text" v-model="username"  placeholder="username"/>
@@ -17,7 +17,7 @@
 	</div>
 	<div v-if="game">
 		<h1>{{ game.name }} - {{ username || 'host' }}</h1>
-		<div>
+		<div class="felt">
 			<h2>transcript</h2>
 			<form @submit.stop.prevent="say">
 				<input type="text" v-model="say_what" placeholder="say something">
@@ -30,6 +30,15 @@
 					{{ item.message.username || 'host' }} says: {{ item.message.said }}
 				</span>
 				<span v-else>{{item.signal}} {{ item.message }}</span>
+			</div>
+		</div>
+		<div class="felt" v-if="!username">
+			<div style="margin:5em;">
+				<div v-for="user in game.users" :style="{transform: rotation($index)}">
+					<div style="display:inline-block;transform: rotate(90deg);">
+						{{ user }}
+					</div>
+				</div>
 			</div>
 		</div>
 	</div>

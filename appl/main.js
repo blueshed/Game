@@ -36,7 +36,7 @@ var appl = window.appl =  new Vue({
 			}
 		},
 		enter_game(name){
-			this.$ws.rpc("enter_game",{name:name,username:this.username}).then((result)=>{
+			return this.$ws.rpc("enter_game",{name:name,username:this.username}).then((result)=>{
 				this.game = result;
 			});
 		},
@@ -53,9 +53,12 @@ var appl = window.appl =  new Vue({
 		load_state(){
 			if (window.localStorage) {
 				var state = localStorage.getItem("state");
+				if(state){
+					state = JSON.parse(state);
+				}
 				this.username = state ? state.username : null;
 				if(state && state.game_name){
-					this.enter_game(state.game_name);
+					return this.enter_game(state.game_name);
 				}
 			}
 			else {
@@ -65,14 +68,18 @@ var appl = window.appl =  new Vue({
 		},
 		save_state(){
 			if (window.localStorage) {
-				localStorage.setItem("state",{
+				localStorage.setItem("state",JSON.stringify({
 					username: this.username,
 					game_name: this.game ? this.game.name : null
-				});
+				}));
 			}
 			else {
 				this.error = "No local storeage!"
 			}
+		},
+		rotation(index){
+			var deg = (360 / this.game.users.length) * index;
+			return "rotate(" + deg + "deg)";
 		}
 	},
 	events:{
@@ -112,6 +119,7 @@ var appl = window.appl =  new Vue({
 		});
 		this.$ws.rpc("get_games",{}).then((result)=>{
 			this.games = result;
+			this.load_state();
 		});
     }
 });
