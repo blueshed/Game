@@ -6,8 +6,18 @@ class Control(object):
 
     def __init__(self):
         self._clients = []
+        self._pending = []
         self._state = {}
         self._load_state()
+
+    def _flush(self):
+        for game, broadcast in self._pending:
+            if game:
+                game.setdefault("transcript", []).append(json.loads(broadcast))
+            self._save_state()
+            for client in self._clients:
+                if game is None or client._game == game:
+                    client.broadcast(broadcast)
 
     def _load_state(self):
         if os.path.isfile("games.json"):
@@ -39,26 +49,31 @@ class Control(object):
 
     def enter_game(self, context, name, username):
         game = self._state[name]
-        game.setdefault("users", []).append(username)
+        users = game.setdefault("users", [])
+        if username and username not in users:
+            users.append(username)
         context._game = game
         context._username = username
-        broadcast = json.dumps({
-            'signal': "entered_game",
-            'message': context._username
-        })
-        self._broadcast_to_game_(game, broadcast)
+        if username:
+            broadcast = json.dumps({
+                'signal': "entered_game",
+                'message': context._username
+            })
+            self._broadcast_to_game_(game, broadcast)
         return game
 
     def leave_game(self, context):
         game = context._game
-        game.setdefault("users", []).remove(context._username)
-        broadcast = json.dumps({
-            'signal': "left_game",
-            'message': context._username
-        })
+        users = game.setdefault("users", [])
+        if context._username in users:
+            users.remove(context._username)
+            broadcast = json.dumps({
+                'signal': "left_game",
+                'message': context._username
+            })
+            self._broadcast_to_game_(game, broadcast)
         context._game = None
         context._username = None
-        self._broadcast_to_game_(game, broadcast)
         return True
 
     def say(self, context, message):
@@ -74,9 +89,4 @@ class Control(object):
         return True
 
     def _broadcast_to_game_(self, game, broadcast):
-        if game:
-            game.setdefault("transcript", []).append(broadcast)
-        self._save_state()
-        for client in self._clients:
-            if game is None or client._game == game:
-                client.broadcast(broadcast)
+        self._pending.append((game, broadcast))

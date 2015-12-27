@@ -19,6 +19,7 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
 
     def open(self):
         self._game = None
+        self._username = None
         self.set_nodelay(True)
         self.control._clients.append(self)
 
@@ -47,6 +48,7 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
         logging.debug(message)
         request_id = method = None
         try:
+            self.control._pending = []
             msg = loads(message)
             method = msg["method"]
             args = msg["args"]
@@ -55,6 +57,7 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
             if result:
                 logging.debug(result)
                 self.write_message(result)
+            self.control._flush()
         except Exception as ex:
             logging.exception(ex)
             error = str(ex)

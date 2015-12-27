@@ -3,13 +3,34 @@
 		{{ error }}
 	</div>
 	Welcome {{ message }}
+	<div v-if="!game">
 	<form @submit.stop.prevent="create_game">
-		<input type="text" v-model="new_game_name" />
+		<input type="text" v-model="username"  placeholder="username"/>
+		<input type="text" v-model="new_game_name" placeholder="new game name" />
 		<input type="submit" name="submit" value="Add"/>
 	</form>
-	<ul>
+	<ul >
 		<li v-for="game in games">
-			{{ game }}
+			<a href="#" @click.prevent="enter_game(game)">{{ game }}</a>
 		</li>
 	</ul>
+	</div>
+	<div v-if="game">
+		<h1>{{ game.name }} - {{ username || 'host' }}</h1>
+		<div>
+			<h2>transcript</h2>
+			<form @submit.stop.prevent="say">
+				<input type="text" v-model="say_what" placeholder="say something">
+				<input type="submit" name="submit" value="Say"/>
+				<button @click.prevent="leave_game">leave game</button>
+			</form>
+			<div v-for="item in game.transcript" track-by="$index">
+				{{ item.method }}
+				<span v-if="item.signal=='said'">
+					{{ item.message.username || 'host' }} says: {{ item.message.said }}
+				</span>
+				<span v-else>{{item.signal}} {{ item.message }}</span>
+			</div>
+		</div>
+	</div>
 </div>
